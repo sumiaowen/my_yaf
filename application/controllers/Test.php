@@ -13,6 +13,19 @@ class TestController extends Yaf_Controller_Abstract
 
 	public function indexAction()
 	{
+		$mysql = new MyMysql();
+
+		$data = array('keyword'=>'1111');
+//		$data[] = array('keyword'=>'1111');
+//		$data[] = array('keyword'=>'2222');
+//		$data[] = array('keyword'=>'3333');
+//		$data[] = array('keyword'=>'4444');
+
+		$result = $mysql->insert('keywords2',$data);
+
+		echo '<pre>';
+		print_r($result);
+		echo '</pre>';
 
 		return false;
 	}
