@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Created by PhpStorm.
  * User: sumiaowen
@@ -12,8 +13,6 @@ class TestController extends Yaf_Controller_Abstract
 
 	public function indexAction()
 	{
-
-		echo 111;
 
 		return false;
 	}
