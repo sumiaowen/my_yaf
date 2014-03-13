@@ -15,13 +15,9 @@ class TestController extends Yaf_Controller_Abstract
 	{
 		$mysql = new MyMysql();
 
-		$data = array('keyword'=>'1111');
-//		$data[] = array('keyword'=>'1111');
-//		$data[] = array('keyword'=>'2222');
-//		$data[] = array('keyword'=>'3333');
-//		$data[] = array('keyword'=>'4444');
+		$sql = "insert into keywords2(keyword) values('232323')";
 
-		$result = $mysql->insert('keywords2',$data);
+		$result = $mysql->exec($sql);
 
 		echo '<pre>';
 		print_r($result);
