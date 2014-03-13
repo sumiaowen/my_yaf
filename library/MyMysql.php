@@ -25,6 +25,9 @@ class MyMysql
 	//调试
 	public $debug = null;
 
+	//开始事务
+	private $_begin_transaction = false;
+
 	/**
 	 * @param bool   $debug    是否开启调试，错误信息输出
 	 * @param string $database 数据库类别
@@ -280,6 +283,55 @@ class MyMysql
 		{
 			exit($msg);
 		}
+	}
+
+	/**
+	 * 事务开始
+	 * @return bool
+	 */
+	public function begin()
+	{
+		self::$pdo || self::instance();
+
+		//已经有事务，退出事务
+		$this->rollback();
+
+		if(!self::$pdo->beginTransaction())
+		{
+			return false;
+		}
+
+		return $this->_begin_transaction = true;
+	}
+
+	/**
+	 * 事务提交
+	 * @return bool
+	 */
+	public function commit()
+	{
+		if($this->_begin_transaction)
+		{
+			$this->_begin_transaction = false;
+			self::$pdo->commit();
+		}
+
+		return true;
+	}
+
+	/**
+	 * 事务回滚
+	 * @return bool
+	 */
+	public function rollback()
+	{
+		if($this->_begin_transaction)
+		{
+			$this->_begin_transaction = false;
+			self::$pdo->rollback();
+		}
+
+		return false;
 	}
 
 	/**

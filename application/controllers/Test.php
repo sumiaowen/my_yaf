@@ -15,12 +15,24 @@ class TestController extends Yaf_Controller_Abstract
 	{
 		$mysql = new MyMysql();
 
-		$sql = "insert into keywords2(keyword) values('232323')";
+		$k = mt_rand(10,99);
+		try
+		{
+			$mysql->begin();
 
-		$result = $mysql->exec($sql);
+			$mysql->exec("update test set k={$k} where id =1");
+			$mysql->exec("update test set k={$k}2 where id =2");
+
+			$mysql->commit();
+		}
+		catch(Exception $e)
+		{
+			$mysql->rollback();
+			echo $e->getMessage();
+		}
 
 		echo '<pre>';
-		print_r($result);
+//		print_r($result);
 		echo '</pre>';
 
 		return false;
