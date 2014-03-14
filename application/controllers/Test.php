@@ -10,26 +10,17 @@
 class TestController extends Yaf_Controller_Abstract
 {
 
-
 	public function indexAction()
 	{
-		$mysql = new MyMysql();
+		$data = array('one' => 1111, 'two' => 222);
 
-		$k = mt_rand(10,99);
-		try
-		{
-			$mysql->begin();
+		$session = new MySession();
 
-			$mysql->exec("update test set k={$k} where id =1");
-			$mysql->exec("update test set k={$k}2 where id =2");
+//		$session->destory();
 
-			$mysql->commit();
-		}
-		catch(Exception $e)
-		{
-			$mysql->rollback();
-			echo $e->getMessage();
-		}
+		$session->set('one','111',60);
+
+		echo $session->get('one');
 
 		echo '<pre>';
 //		print_r($result);
@@ -40,8 +31,16 @@ class TestController extends Yaf_Controller_Abstract
 
 	public function nameAction()
 	{
+		session_start();
+		var_dump($_SESSION);
 
-		echo 'sdfsdfsdf';
+		return false;
+	}
+
+	public function destroyAction()
+	{
+		session_start();
+		session_destroy();
 
 		return false;
 	}
