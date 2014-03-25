@@ -12,21 +12,15 @@ class TestController extends Yaf_Controller_Abstract
 
 	public function indexAction()
 	{
-		$data = array('one' => 1111, 'two' => 222);
-
 		$session = new MySession();
 
-//		$session->destory();
+		$data = array('one' => 111, 'two' => 222);
 
-		$session->set('one','111',60);
+//		$session->set('test',$data,60);
 
-		echo $session->get('one');
+		var_dump($session->get('test'));
 
-		echo '<pre>';
-//		print_r($result);
-		echo '</pre>';
-
-		return false;
+		return FALSE;
 	}
 
 	public function nameAction()
@@ -34,7 +28,7 @@ class TestController extends Yaf_Controller_Abstract
 		session_start();
 		var_dump($_SESSION);
 
-		return false;
+		return FALSE;
 	}
 
 	public function destroyAction()
@@ -42,7 +36,7 @@ class TestController extends Yaf_Controller_Abstract
 		session_start();
 		session_destroy();
 
-		return false;
+		return FALSE;
 	}
 
 }

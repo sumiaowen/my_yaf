@@ -11,24 +11,23 @@
  */
 class MySession
 {
-	public $sessionStart = false;
+	public $sessionStart = FALSE;
 
 	public function start()
 	{
 		if(!$this->sessionStart)
 		{
-			echo 'ok';
 			session_start();
-			$this->sessionStart = true;
+			$this->sessionStart = TRUE;
 		}
 
-		var_dump($this->sessionStart);
+		return $this->sessionStart;
 	}
 
 	public function set($key, $value, $lifeTime, $session_name = 'PHPSESSID')
 	{
 		ini_set('session.gc_maxlifetime', $lifeTime);
-		ini_set('session.save_path', '/tmp/test');
+//		ini_set('session.save_path', '/tmp/test');
 
 		session_name(md5($session_name));
 		session_set_cookie_params($lifeTime);
@@ -42,7 +41,7 @@ class MySession
 	{
 		$this->start();
 
-		return $_SESSION[$key];
+		return isset($_SESSION[$key]) ? $_SESSION[$key] : FALSE;
 	}
 
 	public function destory()
