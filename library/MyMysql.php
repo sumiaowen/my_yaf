@@ -11,47 +11,57 @@
 class MyMysql
 {
 	//pdo 链接 mysql dns
-	static $dns = null;
+	public $dns = NULL;
 
 	//mysql 用户名
-	static $username = null;
+	public $username = NULL;
 
 	//mysql 密码
-	static $password = null;
+	public $password = NULL;
 
-	//pdo 链接实例
-	static $pdo = null;
+	//pdo
+	protected $pdo = NULL;
+
+	//对象实例化
+	static $instance = array();
+
+	//数据库
+	public $database = NULL;
 
 	//调试
-	public $debug = null;
+	public $debug = NULL;
 
 	//开始事务
-	private $_begin_transaction = false;
+	private $_begin_transaction = FALSE;
 
 	/**
 	 * @param bool   $debug    是否开启调试，错误信息输出
 	 * @param string $database 数据库类别
 	 */
-	public function __construct($debug = true, $database = 'default')
+	public function __construct($debug = TRUE, $database = 'default')
 	{
 		$this->debug    = $debug;
-		self::$dns      = Yaf_Registry::get('config')->db->$database->dns;
-		self::$username = Yaf_Registry::get('config')->db->$database->username;
-		self::$password = Yaf_Registry::get('config')->db->$database->password;
+		$this->database = $database;
+		$this->dns      = Yaf_Registry::get('config')->db->$database->dns;
+		$this->username = Yaf_Registry::get('config')->db->$database->username;
+		$this->password = Yaf_Registry::get('config')->db->$database->password;
 	}
 
 	/**
-	 * PDO对象实例化
-	 * @return null|PDO
+	 * @param $database
+	 * @param $dns
+	 * @param $username
+	 * @param $password
+	 * @return mixed
 	 */
-	static function instance()
+	static function instance($database, $dns, $username, $password)
 	{
-		if(is_null(self::$pdo))
+		if(empty(self::$instance[$database]))
 		{
 			try
 			{
-				self::$pdo = new PDO(self::$dns, self::$username, self::$password);
-				self::$pdo->query('set names utf8');
+				self::$instance[$database] = new PDO($dns, $username, $password);
+				self::$instance[$database]->query('set names utf8');
 			}
 			catch(PDOException $e)
 			{
@@ -59,7 +69,7 @@ class MyMysql
 			}
 		}
 
-		return self::$pdo;
+		return self::$instance[$database];
 	}
 
 	/**
@@ -71,9 +81,9 @@ class MyMysql
 	 */
 	public function query($sql, $parameters = array(), $option = PDO::FETCH_ASSOC)
 	{
-		self::$pdo || self::instance();
+		$this->pdo || $this->pdo = self::instance($this->database, $this->dns, $this->username, $this->password);
 
-		$stmt = self::$pdo->prepare($sql);
+		$stmt = $this->pdo->prepare($sql);
 		$stmt->execute($parameters);
 
 		$tmp = array();
@@ -98,9 +108,9 @@ class MyMysql
 	 */
 	public function execute($sql, $parameters = array())
 	{
-		self::$pdo || self::instance();
+		$this->pdo || $this->pdo = self::instance($this->database, $this->dns, $this->username, $this->password);
 
-		$stmt = self::$pdo->prepare($sql);
+		$stmt = $this->pdo->prepare($sql);
 		$stmt->execute($parameters);
 
 		if($this->debug)
@@ -118,9 +128,9 @@ class MyMysql
 	 */
 	public function exec($sql)
 	{
-		self::$pdo || self::instance();
+		$this->pdo || $this->pdo = self::instance($this->database, $this->dns, $this->username, $this->password);
 
-		$rows = self::$pdo->exec($sql);
+		$rows = $this->pdo->exec($sql);
 
 		if($this->debug)
 		{
@@ -138,15 +148,15 @@ class MyMysql
 	 */
 	public function insert($tableName, $data)
 	{
-		self::$pdo || self::instance();
+		$this->pdo || $this->pdo = self::instance($this->database, $this->dns, $this->username, $this->password);
 
 		$fields = '`' . implode('`,`', array_keys($data)) . '`';
 
-		$values = "'" . implode("','", $data) . "'";
+		$values = implode(',', array_fill(0, count($data), '?'));
 
 		$sql = "INSERT INTO `{$tableName}`({$fields}) VALUES ({$values})";
 
-		self::$pdo->exec($sql);
+		$this->execute($sql, array_values($data));
 
 		if($this->debug)
 		{
@@ -164,21 +174,27 @@ class MyMysql
 	 */
 	public function insertBatch($tableName, $data)
 	{
-		self::$pdo || self::instance();
+		$this->pdo || $this->pdo = self::instance($this->database, $this->dns, $this->username, $this->password);
 
 		$fields = '`' . implode('`,`', array_keys($data[0])) . '`';
 
-		$tmp = array();
+		$tmp  = array();
+		$tmp2 = array();
 		foreach($data as $value)
 		{
-			$tmp[] = "'" . implode("','", $value) . "'";
+			$tmp[] = implode(',', array_fill(0, count($value), '?'));
+
+			foreach($value as $v)
+			{
+				$tmp2[] = $v;
+			}
 		}
 
 		$values = "(" . implode("),(", $tmp) . ")";
 
 		$sql = "INSERT INTO `{$tableName}`({$fields}) VALUES {$values}";
 
-		$rows = self::$pdo->exec($sql);
+		$rows = $this->execute($sql, $tmp2);
 
 		if($this->debug)
 		{
@@ -197,7 +213,7 @@ class MyMysql
 	 */
 	public function updateByPrimaryKey($tableName, $where, $data)
 	{
-		self::$pdo || self::instance();
+		$this->pdo || $this->pdo = self::instance($this->database, $this->dns, $this->username, $this->password);
 
 		//条件
 		$whereId    = array_keys($where);
@@ -206,14 +222,14 @@ class MyMysql
 		$tmp = array();
 		foreach($data as $key => $value)
 		{
-			$tmp[] = "`{$key}`='{$value}'";
+			$tmp[] = "`{$key}`= ?";
 		}
 
-		$data = implode(',', $tmp);
+		$set = implode(',', $tmp);
 
-		$sql = "UPDATE `{$tableName}` SET {$data} WHERE `{$whereId[0]}`='{$whereValue[0]}'";
+		$sql = "UPDATE `{$tableName}` SET {$set} WHERE `{$whereId[0]}`='{$whereValue[0]}'";
 
-		$rows = self::$pdo->exec($sql);
+		$rows = $this->execute($sql, array_values($data));
 
 		if($this->debug)
 		{
@@ -231,7 +247,7 @@ class MyMysql
 	 */
 	public function deleteByPrimaryKey($tableName, $where)
 	{
-		self::$pdo || self::instance();
+		$this->pdo || $this->pdo = self::instance($this->database, $this->dns, $this->username, $this->password);
 
 		//条件
 		$whereId    = array_keys($where);
@@ -239,7 +255,7 @@ class MyMysql
 
 		$sql = "DELETE FROM `{$tableName}` WHERE `{$whereId[0]}`='{$whereValue[0]}'";
 
-		$rows = self::$pdo->exec($sql);
+		$rows = $this->pdo->exec($sql);
 
 		if($this->debug)
 		{
@@ -255,9 +271,9 @@ class MyMysql
 	 */
 	public function getLastInsertId()
 	{
-		self::$pdo || self::instance();
+		$this->pdo || $this->pdo = self::instance($this->database, $this->dns, $this->username, $this->password);
 
-		return self::$pdo->lastInsertId();
+		return $this->pdo->lastInsertId();
 	}
 
 	/**
@@ -265,7 +281,7 @@ class MyMysql
 	 */
 	public function error($stmt = '')
 	{
-		$error = $stmt ? $stmt->errorInfo() : self::$pdo->errorInfo();
+		$error = $stmt ? $stmt->errorInfo() : $this->pdo->errorInfo();
 
 		$msg = "SQLSTATE:{$error[0]}";
 
@@ -291,17 +307,17 @@ class MyMysql
 	 */
 	public function begin()
 	{
-		self::$pdo || self::instance();
+		$this->pdo || $this->pdo = self::instance($this->database, $this->dns, $this->username, $this->password);
 
 		//已经有事务，退出事务
 		$this->rollback();
 
-		if(!self::$pdo->beginTransaction())
+		if(!$this->pdo->beginTransaction())
 		{
-			return false;
+			return FALSE;
 		}
 
-		return $this->_begin_transaction = true;
+		return $this->_begin_transaction = TRUE;
 	}
 
 	/**
@@ -312,11 +328,11 @@ class MyMysql
 	{
 		if($this->_begin_transaction)
 		{
-			$this->_begin_transaction = false;
-			self::$pdo->commit();
+			$this->_begin_transaction = FALSE;
+			$this->pdo->commit();
 		}
 
-		return true;
+		return TRUE;
 	}
 
 	/**
@@ -327,11 +343,11 @@ class MyMysql
 	{
 		if($this->_begin_transaction)
 		{
-			$this->_begin_transaction = false;
-			self::$pdo->rollback();
+			$this->_begin_transaction = FALSE;
+			$this->pdo->rollback();
 		}
 
-		return false;
+		return FALSE;
 	}
 
 	/**
@@ -339,6 +355,6 @@ class MyMysql
 	 */
 	public function close()
 	{
-		self::$pdo = null;
+		$this->pdo = NULL;
 	}
 }
