@@ -9,16 +9,16 @@
  */
 class Test_TestController extends Yaf_Controller_Abstract
 {
+
+	//访问URL：http://www.yaf.com/test_test/index
 	public function IndexAction()
 	{
-		echo $_GET['id'];
-		return false;
+		echo 'test_test_controller<br>';
 
-	}
+		//测试test_test_model
+		$test_test_model = new Test_TestModel();
+		echo $test_test_model->index();
 
-	public function AbcAction()
-	{
-		echo $_GET['id'];
 		return false;
 	}
 }
